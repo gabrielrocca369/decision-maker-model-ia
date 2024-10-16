@@ -31,7 +31,7 @@ Instale as dependências utilizando o arquivo `requirements.txt`:
 
 ## Uso
 
-Certifique-se de **adicionar seu próprio diretório \assets com o logo.png desejado, e o diretório \data com o sample_data no formato desejado**.
+Certifique-se de **adicionar seu próprio diretório \assets com o logo.png desejado, e o diretório \data com o sample_data no formato desejado**. Esses diretórios devem estar fora do diretório \src, como indicado na estrutura mais abaixo.
 
 Após instalar as dependências, você pode iniciar o aplicativo com o seguinte comando no terminal:
 
