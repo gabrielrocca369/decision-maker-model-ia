@@ -2,14 +2,14 @@
 
 ## Descrição
 
-**DecisionMaker** é uma ferramenta avançada de análise de dados para facilitar a tomada de decisões instantâneas baseadas em informações. Utilizando métodos estatísticos, visualizações interativas e simulações de Monte Carlo, o **DecisionMaker** oferece uma compreensão mais profunda dos dados, permitindo que usuários tomem decisões informadas e eficazes.
+**DecisionMaker** é uma ferramenta avançada de análise de dados projetada para facilitar a tomada de decisões instantâneas baseadas em informações. Utilizando métodos estatísticos, visualizações interativas e simulações de Monte Carlo, o DecisionMaker oferece uma compreensão profunda dos dados, permitindo que os usuários tomem decisões informadas e eficazes.
 
 ### Recursos Principais
 
-- **Interface Intuitiva**: Desenvolvida com Pygame, oferecendo uma experiência de usuário amigável.
-- **Análise Estatística Completa**: Inclui cálculo de média, desvio padrão, valor ideal (proporção áurea), e análise de Pareto (80/20).
+- **Interface Intuitiva**: Desenvolvida com Pygame, oferecendo uma experiência amigável ao usuário.
+- **Análise Estatística Completa**: Inclui cálculo de média, desvio padrão, valor ideal (proporção áurea) e análise de Pareto (80/20).
 - **Simulação de Monte Carlo**: Realiza simulações probabilísticas para prever uma gama de possíveis resultados e mensurar incertezas.
-- **Relatórios em PDF**: Gera relatórios automáticos, incluindo gráficos, em formato PDF para compartilhamento.
+- **Relatórios em PDF**: Gera relatórios automáticos, incluindo gráficos, em formato PDF para facilitar o compartilhamento.
 - **Recomendações Automatizadas**: Sugere ações com base nos resultados, ajudando na tomada de decisões orientadas por dados.
 
 ## Instalação
