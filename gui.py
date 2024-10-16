@@ -70,8 +70,10 @@ def run_app():
     # Cores
     white = (248, 248, 242)
     black = (40, 44, 52)
-    green = (0, 255, 0)
+    green = (0, 250, 0)
     dark_green = (0, 200, 0)  # Cor para o hover (um verde mais escuro)
+    blue = (0, 0, 250)
+    dark_blue = (25, 25, 112)
     text_color = black
 
     # Fonte
@@ -136,7 +138,7 @@ def run_app():
 
             # Botão para visualizar o histograma
             draw_button(screen, "Visualizar Histograma", center_x, button_y_positions[4],
-                        button_width, button_height, green, dark_green, text_color, font)
+                        button_width, button_height, blue, dark_blue, text_color, font)
 
         pygame.display.flip()
 
