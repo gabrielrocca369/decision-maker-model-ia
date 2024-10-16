@@ -65,14 +65,25 @@ def download_results(results):
         pdf.cell(0, 10, txt=f"Coluna Analisada: {results['Coluna Analisada']}", ln=True)
         pdf.ln(5)
 
+        # Adicionar as novas métricas no relatório
         for key, value in plot_results.items():
             pdf.cell(0, 10, txt=f"{key}: {value:.2f}", ln=True)
+        pdf.ln(10)
+
+        # Adicionar resumo da Simulação de Monte Carlo
+        pdf.set_font("Arial", 'B', size=14)
+        pdf.cell(0, 10, txt="Resumo da Simulação de Monte Carlo:", ln=True)
+        pdf.set_font("Arial", size=12)
+        monte_carlo_mean = np.mean(simulated_projections)
+        monte_carlo_std = np.std(simulated_projections)
+        pdf.cell(0, 10, txt=f"Média da Simulação: {monte_carlo_mean:.2f}", ln=True)
+        pdf.cell(0, 10, txt=f"Desvio Padrão da Simulação: {monte_carlo_std:.2f}", ln=True)
         pdf.ln(10)
 
         # Adicionar recomendações
         pdf.set_font("Arial", 'B', size=16)
         pdf.cell(0, 10, txt="Recomendações:", ln=True)
-        pdf.set_font("Arial", size=16)
+        pdf.set_font("Arial", size=12)
         for rec in results["Recomendações"]:
             pdf.multi_cell(0, 10, txt=f"- {rec}")
         pdf.ln(10)

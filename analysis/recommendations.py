@@ -1,7 +1,7 @@
 import pygame
 import logging
 
-def generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection, skewness=0):
+def generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_20, std_dev, future_projection, cagr=None, skewness=0, coef_var=None):
     try:
         recommendations = []
 
@@ -24,9 +24,27 @@ def generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, fut
         else:
             recommendations.append("Variabilidade aceitável nos dados.")
 
+        # Recomendações com base no coeficiente de variação (se aplicável)
+        if coef_var is not None:
+            if coef_var > 20:
+                recommendations.append("O coeficiente de variação é alto, indicando uma alta volatilidade nos dados.")
+            else:
+                recommendations.append("O coeficiente de variação está em um nível aceitável.")
+
         # Recomendações com base na análise de assimetria
         if abs(skewness) > 1:
             recommendations.append("Os dados apresentam alta assimetria. Considere transformar os dados ou ajustar sua análise para acomodar esse fator.")
+
+        # Recomendações baseadas no valor de tensão
+        if future_projection < tension_value:
+            recommendations.append("A projeção futura está abaixo do valor de tensão. Avalie uma estratégia conservadora ou ajuste suas metas.")
+
+        # Recomendações com base no CAGR (se aplicável)
+        if cagr is not None:
+            if cagr > 10:
+                recommendations.append("A taxa de crescimento composta (CAGR) é alta. Considere manter ou expandir as estratégias atuais.")
+            else:
+                recommendations.append("A taxa de crescimento composta (CAGR) é baixa. Avalie novas estratégias de crescimento.")
 
         return recommendations
 
@@ -58,10 +76,15 @@ def explain_results(screen):
             "Projeção Futura:\n"
             "Estimativa do próximo valor com base na tendência atual dos dados. Pode ajudar a prever o desempenho "
             "futuro em termos de visualizações, engajamento, etc.\n\n"
+            "Coeficiente de Variação:\n"
+            "Mede a variabilidade relativa dos dados. Um coeficiente de variação alto indica maior volatilidade "
+            "e incerteza nos resultados.\n\n"
             "Simulação de Monte Carlo:\n"
             "Método estatístico que utiliza a aleatoriedade para estimar a incerteza nos resultados futuros. "
             "A simulação gera uma distribuição de possíveis projeções futuras, permitindo entender a gama "
             "de resultados possíveis e suas probabilidades.\n\n"
+            "CAGR (Taxa de Crescimento Composta):\n"
+            "Mede o crescimento médio anual composto ao longo do tempo. Útil para avaliar o desempenho em séries temporais.\n\n"
             "Exemplo Prático:\n"
             "Ao analisar a taxa de engajamento em campanhas de comunicação, a Simulação de Monte Carlo pode ajudar a "
             "prever a probabilidade de alcançar metas de engajamento, considerando a variabilidade histórica dos dados."
@@ -110,8 +133,41 @@ def explain_results(screen):
         # Desenhar uma borda ao redor da superfície de explicação
         pygame.draw.rect(explanation_surface, border_color, explanation_surface.get_rect(), width=2, border_radius=border_radius)
 
-        # Posicionar a superfície no centro da tela
-        explanation_rect = explanation_surface.get_rect(center=(screen_width // 2, screen_height // 2))
+        # Configuração de rolagem
+        scroll_y = 0
+        scroll_speed = 20  # Velocidade de rolagem
+
+        # Loop para exibir a explicação e permitir rolagem
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    elif event.key == pygame.K_DOWN:
+                        scroll_y = min(scroll_y + scroll_speed, explanation_surface.get_height() - screen_height)
+                    elif event.key == pygame.K_UP:
+                        scroll_y = max(scroll_y - scroll_speed, 0)
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False
+
+            # Desenhar o fundo escurecido
+            dim_overlay = pygame.Surface((screen_width, screen_height))
+            dim_overlay.set_alpha(150)  # Transparência
+            dim_overlay.fill((0, 0, 0))
+            screen.blit(dim_overlay, (0, 0))
+
+            # Desenhar a superfície da explicação sobre a tela principal
+            screen.blit(explanation_surface, (0, -scroll_y))
+            pygame.display.flip()
+
+    except Exception as e:
+        logging.error(f"Erro ao exibir explicação: {e}", exc_info=True)
+        print("Erro ao exibir explicação. Verifique o log para mais detalhes.")
 
         # Loop para exibir a explicação e aguardar o usuário fechar
         running = True

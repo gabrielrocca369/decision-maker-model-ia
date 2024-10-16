@@ -26,15 +26,20 @@ def monte_carlo_simulation(slope, intercept, std_dev, data_length, skewness=0, n
         if data_length <= 0 or not isinstance(data_length, int):
             raise ValueError("O comprimento dos dados deve ser um inteiro positivo.")
 
+        # Verificar se n_simulations é um número válido
+        if n_simulations <= 0 or not isinstance(n_simulations, int):
+            raise ValueError("O número de simulações deve ser um inteiro positivo.")
+
         logging.info(f"Executando simulação de Monte Carlo com {n_simulations} simulações")
 
-        # Se os dados forem assimétricos, usamos uma distribuição log-normal
+        # Se os dados forem assimétricos, usamos uma distribuição log-normal ajustada
         if abs(skewness) > 1:
-            logging.warning(f"Assimetria alta detectada: {skewness}. Usando distribuição log-normal para simulações.")
-            simulated_projections = slope * (data_length + 1) + intercept + np.random.lognormal(mean=0, sigma=std_dev, size=n_simulations)
+            logging.warning(f"Assimetria alta detectada (skewness = {skewness}). Usando distribuição log-normal para simulações.")
+            # Ajustamos a simulação para valores não negativos com desvio padrão adequado
+            simulated_projections = slope * (data_length + 1) + intercept + np.random.lognormal(mean=0, sigma=np.log(1 + std_dev), size=n_simulations)
         else:
             # Se não houver assimetria significativa, usamos a distribuição normal
-            simulated_projections = slope * (data_length + 1) + intercept + np.random.normal(0, std_dev, n_simulations)
+            simulated_projections = slope * (data_length + 1) + intercept + np.random.normal(loc=0, scale=std_dev, size=n_simulations)
 
         logging.info("Simulação de Monte Carlo concluída com sucesso")
         return simulated_projections

@@ -3,6 +3,7 @@ from pygame.locals import QUIT, MOUSEBUTTONDOWN
 from analysis.data_import import import_file
 from analysis.data_analysis import analyze_data
 from visualization.plots import visualize_results
+from visualization.plots import plot_histogram
 from visualization.reports import download_results
 from analysis.recommendations import explain_results
 from utils.helpers import draw_button, load_logo
@@ -23,26 +24,30 @@ logging.basicConfig(level=logging.DEBUG,
 results = None
 df = None
 processing = False
+column_name = None  # Adicionar variável global para rastrear a coluna selecionada
 
-def run_analysis(df, data_column_name):
+def run_analysis(df, data_column_name, plot_histogram_flag=False):
     global results
     global processing
     processing = True
 
     def analyze():
         global results
-        global processing  # Added to ensure global variable is updated
+        global processing
         try:
             logging.info("Iniciando análise dos dados...")
-            results = analyze_data(df, data_column_name)
+            results = analyze_data(df, data_column_name, plot_histogram_flag=plot_histogram_flag)
+            
+            if plot_histogram_flag:
+                # Chamar a função diretamente sem passar o 'screen'
+                plot_histogram(results['Simulação de Monte Carlo'], "Simulação de Monte Carlo")
             logging.info("Análise dos dados concluída com sucesso.")
         except Exception as e:
             logging.error(f"Erro ao analisar dados: {e}")
             results = None  # Garantir que results seja None em caso de erro
         finally:
-            processing = False  # Certificar-se de que processing é definido como False
+            processing = False
             pygame.event.post(pygame.event.Event(pygame.USEREVENT))  # Postar um evento customizado para atualizar a interface
-
 
     analysis_thread = threading.Thread(target=analyze)
     analysis_thread.start()
@@ -51,6 +56,7 @@ def run_app():
     global results
     global df
     global processing
+    global column_name  # Acessar a variável global
 
     # Inicialização do pygame
     pygame.init()
@@ -102,7 +108,8 @@ def run_app():
         primeiro_botao_y,
         primeiro_botao_y + 70,  # Espaçamento de 70 pixels entre os botões
         primeiro_botao_y + 140,
-        primeiro_botao_y + 210
+        primeiro_botao_y + 210,
+        primeiro_botao_y + 280  # Novo botão para o histograma
     ]
 
     running = True
@@ -116,7 +123,7 @@ def run_app():
 
         # Renderizar botões
         draw_button(screen, "Importar Arquivo", center_x, button_y_positions[0],
-                button_width, button_height, green, dark_green, text_color, font)
+                    button_width, button_height, green, dark_green, text_color, font)
 
         if results and not processing:
             # Mostrar botões adicionais apenas se não estiver processando
@@ -125,6 +132,10 @@ def run_app():
             draw_button(screen, "Baixar Resultado", center_x, button_y_positions[2],
                         button_width, button_height, green, dark_green, text_color, font)
             draw_button(screen, "Como Avaliar os Resultados", center_x, button_y_positions[3],
+                        button_width, button_height, green, dark_green, text_color, font)
+
+            # Botão para visualizar o histograma
+            draw_button(screen, "Visualizar Histograma", center_x, button_y_positions[4],
                         button_width, button_height, green, dark_green, text_color, font)
 
         pygame.display.flip()
@@ -161,13 +172,15 @@ def run_app():
                                 # Iniciar a análise
                                 run_analysis(df, column_name)
                     elif results and not processing:
-                        # Verificar se não está processando antes de responder aos cliques nos botões
                         if button_y_positions[1] <= mouse_y <= button_y_positions[1] + button_height:
                             visualize_results(results)
                         elif button_y_positions[2] <= mouse_y <= button_y_positions[2] + button_height:
                             download_results(results)
                         elif button_y_positions[3] <= mouse_y <= button_y_positions[3] + button_height:
                             explain_results(screen)
+                        elif button_y_positions[4] <= mouse_y <= button_y_positions[4] + button_height:
+                            # Executar análise e visualizar o histograma
+                            run_analysis(df, column_name, plot_histogram_flag=True)
 
             elif event.type == pygame.USEREVENT:
                 # Evento customizado para garantir que a interface atualize após a conclusão do processamento

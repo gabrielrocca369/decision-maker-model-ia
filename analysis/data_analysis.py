@@ -3,9 +3,10 @@ from scipy.stats import linregress
 from scipy.stats import skew
 from .monte_carlo import monte_carlo_simulation
 from .recommendations import generate_recommendations
+from visualization.plots import plot_histogram  # Corrigir o caminho de importação
 import logging
 
-def analyze_data(df, data_column_name=None):
+def analyze_data(df, data_column_name=None, plot_histogram_flag=False):
     try:
         logging.info("Iniciando a função analyze_data")
 
@@ -40,15 +41,18 @@ def analyze_data(df, data_column_name=None):
 
         # Cálculos de análise
         mean_value = data_column.mean()
+        median_value = data_column.median()
         max_value = data_column.max()
         min_value = data_column.min()
         ideal_value = mean_value * 1.618  # Proporção Áurea (Fibonacci)
+        tension_value = mean_value * 0.618  # Proporção de Tensão (Fibonacci)
         pareto_80_20 = data_column.quantile(0.8)
         std_dev = data_column.std()
+        coef_var = (std_dev / mean_value) * 100  # Cálculo do coeficiente de variação
 
-        logging.info(f"Média: {mean_value}, Máximo: {max_value}, Mínimo: {min_value}")
-        logging.info(f"Valor Ideal (Proporção Áurea): {ideal_value}")
-        logging.info(f"Pareto 80/20: {pareto_80_20}, Desvio Padrão: {std_dev}")
+        logging.info(f"Média: {mean_value}, Mediana: {median_value}, Máximo: {max_value}, Mínimo: {min_value}")
+        logging.info(f"Valor Ideal Fibonacci: {ideal_value}, Valor de Tensão: {tension_value}")
+        logging.info(f"Pareto 80/20: {pareto_80_20}, Desvio Padrão: {std_dev}, Coeficiente de Variação: {coef_var}%")
 
         # Análise de distribuição dos dados
         skewness = skew(data_column)
@@ -56,7 +60,7 @@ def analyze_data(df, data_column_name=None):
         if abs(skewness) > 1:
             logging.warning("Os dados são altamente assimétricos, considere uma transformação antes de prosseguir com a análise.")
 
-        # Regressão linear
+        # Regressão linear para progressão simples
         x_values = range(len(data_column))
         slope, intercept, r_value, p_value, std_err = linregress(x_values, data_column)
         future_projection = slope * (len(data_column) + 1) + intercept
@@ -69,24 +73,45 @@ def analyze_data(df, data_column_name=None):
 
         logging.info(f"Projeção Futura: {future_projection}")
 
+        # Cálculo da Taxa de Crescimento Composta (CAGR) - Série Temporal
+        if len(data_column) > 1 and min_value > 0:
+            initial_value = data_column.iloc[0]
+            final_value = data_column.iloc[-1]
+            years = len(data_column) - 1  # Considerando a série ao longo do tempo
+            cagr = ((final_value / initial_value) ** (1 / years) - 1) * 100
+        else:
+            cagr = None
+            logging.warning("CAGR não pode ser calculado devido à falta de dados suficientes ou valores negativos/zero.")
+
+        logging.info(f"CAGR: {cagr}%")
+
         # Simulação de Monte Carlo
         simulated_projections = monte_carlo_simulation(slope, intercept, std_dev, len(data_column))
         logging.info("Simulação de Monte Carlo concluída")
 
+        # Geração de histograma se o plot_histogram_flag for True
+        if plot_histogram_flag:
+            logging.info(f"Gerando histograma para a coluna {data_column_name}.")
+            plot_histogram(data_column, column_name=data_column_name)
+
         # Recomendações baseadas nos resultados
-        recommendations = generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection)
+        recommendations = generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_20, std_dev, future_projection)
         logging.info("Geração de recomendações concluída")
 
         # Resultados
         results = {
             "Coluna Analisada": data_column_name,
             "Média": mean_value,
+            "Mediana": median_value,
             "Maior Valor": max_value,
             "Menor Valor": min_value,
-            "Valor Ideal (Proporção Áurea)": ideal_value,
+            "Valor Ideal Fibonacci": ideal_value,
+            "Valor de Tensão": tension_value,
             "Pareto 80/20": pareto_80_20,
             "Desvio Padrão": std_dev,
+            "Coeficiente de Variação": coef_var,
             "Projeção Futura": future_projection,
+            "CAGR": cagr,  # Incluímos a CAGR como métrica para séries temporais
             "Simulação de Monte Carlo": simulated_projections,
             "Recomendações": recommendations
         }
