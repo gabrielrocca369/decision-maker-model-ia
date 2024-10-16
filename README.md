@@ -30,6 +30,9 @@ Instale as dependências utilizando o arquivo `requirements.txt`:
 `pip install -r requirements.txt`
 
 ## Uso
+
+Certifique-se de **adicionar seu próprio diretório \assets com o logo.png desejado, e o diretório \data com o sample_data no formato desejado**.
+
 Após instalar as dependências, você pode iniciar o aplicativo com o seguinte comando no terminal:
 
 `python src/main.py`
