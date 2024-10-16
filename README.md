@@ -37,43 +37,43 @@ Após instalar as dependências, você pode iniciar o aplicativo com o seguinte 
 ## Estrutura do Projeto
 Abaixo está a estrutura do projeto DecisionMaker para ajudá-lo a entender a organização dos arquivos:
 
-`decision-maker/
-│
-├── data/                    # Arquivos de dados de exemplo
-│   └── sample_data.csv
-│
-├── docs/                    # Documentação do projeto
-│   └── README.md
-│
-├── src/                     # Código fonte do projeto
-│   ├── main.py              # Arquivo principal para iniciar a aplicação
-│   ├── gui.py               # Interface gráfica do usuário
-│   ├── analysis/            # Módulo de análise de dados
-│   │   ├── __init__.py
-│   │   ├── data_import.py   # Importação de dados
-│   │   ├── data_analysis.py # Análises estatísticas
-│   │   ├── monte_carlo.py   # Simulação de Monte Carlo
-│   │   └── recommendations.py # Recomendações baseadas em análise
-│   ├── visualization/       # Módulo de visualização dos resultados
-│   │   ├── __init__.py
-│   │   ├── plots.py         # Geração de gráficos
-│   │   └── reports.py       # Geração de relatórios em PDF
-│   └── utils/               # Utilitários auxiliares
-│       ├── __init__.py
-│       └── helpers.py       # Funções de auxílio
-│
-├── tests/                   # Testes unitários do projeto
-│   ├── __init__.py
-│   ├── test_analysis.py     # Testes do módulo de análise
-│   ├── test_visualization.py # Testes do módulo de visualização
-│   └── test_gui.py          # Testes da interface gráfica
-│
-├── assets/                  # Arquivos estáticos, como imagens e ícones
-│   └── logo.png
-│
-├── requirements.txt         # Dependências do projeto
-├── setup.py                 # Script de configuração para instalação do projeto
-└── LICENSE                  # Informações sobre a licença do projeto`
+`decision-maker/`
+`│`
+`├── data/                    # Arquivos de dados de exemplo`
+`│   └── sample_data.csv`
+`│`
+`├── docs/                    # Documentação do projeto`
+`│   └── README.md`
+`│`
+`├── src/                     # Código fonte do projeto`
+`│   ├── main.py              # Arquivo principal para iniciar a aplicação`
+`│   ├── gui.py               # Interface gráfica do usuário`
+`│   ├── analysis/            # Módulo de análise de dados`
+`│   │   ├── __init__.py`
+`│   │   ├── data_import.py   # Importação de dados`
+`│   │   ├── data_analysis.py # Análises estatísticas`
+`│   │   ├── monte_carlo.py   # Simulação de Monte Carlo`
+`│   │   └── recommendations.py # Recomendações baseadas em análise`
+`│   ├── visualization/       # Módulo de visualização dos resultados`
+`│   │   ├── __init__.py`
+`│   │   ├── plots.py         # Geração de gráficos`
+`│   │   └── reports.py       # Geração de relatórios em PDF`
+`│   └── utils/               # Utilitários auxiliares`
+`│       ├── __init__.py`
+`│       └── helpers.py       # Funções de auxílio`
+`│`
+`├── tests/                   # Testes unitários do projeto`
+`│   ├── __init__.py`
+`│   ├── test_analysis.py     # Testes do módulo de análise`
+`│   ├── test_visualization.py # Testes do módulo de visualização`
+`│   └── test_gui.py          # Testes da interface gráfica`
+`│`
+`├── assets/                  # Arquivos estáticos, como imagens e ícones`
+`│   └── logo.png`
+`│`
+`├── requirements.txt         # Dependências do projeto`
+`├── setup.py                 # Script de configuração para instalação do projeto`
+`└── LICENSE                  # Informações sobre a licença do projeto`
 
 ## Publicação no GitHub
 O projeto DecisionMaker está disponível publicamente no GitHub:
