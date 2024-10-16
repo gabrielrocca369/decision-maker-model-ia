@@ -2,11 +2,29 @@ import pygame
 import logging
 import os
 
-def draw_button(screen, text, x, y, w, h, color, text_color, font):
-    pygame.draw.rect(screen, color, (x, y, w, h))
+def draw_button(screen, text, x, y, w, h, color, hover_color, text_color, font):
+    # Obtém a posição atual do mouse
+    mouse_pos = pygame.mouse.get_pos()
+
+    # Verifica se o mouse está sobre o botão
+    if x <= mouse_pos[0] <= x + w and y <= mouse_pos[1] <= y + h:
+        current_color = hover_color  # Usa a cor de hover
+    else:
+        current_color = color  # Usa a cor normal do botão
+
+    # Desenha um retângulo com cantos arredondados
+    border_radius = 15  # Ajuste este valor para cantos mais ou menos arredondados
+    pygame.draw.rect(screen, current_color, (x, y, w, h), border_radius=border_radius)
+
+    # Adicionar uma borda ao redor do botão
+    border_color = (248, 248, 242)  # Cor da borda
+    pygame.draw.rect(screen, border_color, (x, y, w, h), width=2, border_radius=border_radius)
+
+    # Renderiza o texto do botão
     button_text = font.render(text, True, text_color)
     text_rect = button_text.get_rect(center=(x + w // 2, y + h // 2))
     screen.blit(button_text, text_rect)
+
 
 def load_logo(screen_width):
     try:

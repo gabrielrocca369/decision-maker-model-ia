@@ -4,17 +4,38 @@ from .monte_carlo import monte_carlo_simulation
 from .recommendations import generate_recommendations
 import logging
 
-def analyze_data(file_path):
+def analyze_data(df, data_column_name=None):
     try:
-        if file_path.endswith('.csv'):
-            df = pd.read_csv(file_path, encoding='utf-8')
-        elif file_path.endswith('.xlsx'):
-            df = pd.read_excel(file_path)
-        else:
-            raise ValueError("Formato de arquivo não suportado. Apenas .csv e .xlsx são permitidos.")
+        logging.info("Iniciando a função analyze_data")
 
-        # Usando a segunda coluna (coluna B) para os dados
-        data_column = df.iloc[:, 1]
+        # Verificar se o DataFrame tem pelo menos uma coluna
+        if df.shape[1] < 1:
+            logging.error("O DataFrame não contém colunas.")
+            raise ValueError("O DataFrame deve conter pelo menos uma coluna.")
+
+        # Verificar se a coluna selecionada existe no DataFrame
+        if data_column_name not in df.columns:
+            logging.error(f"A coluna '{data_column_name}' não existe no DataFrame.")
+            raise ValueError(f"A coluna '{data_column_name}' não existe no DataFrame.")
+
+        logging.info(f"Coluna selecionada para análise: {data_column_name}")
+
+        # Obter os dados da coluna selecionada
+        data_column = df[data_column_name]
+
+        # Converter para numérico, transformando erros em NaN
+        data_column = pd.to_numeric(data_column, errors='coerce')
+
+        # Remover valores nulos resultantes da conversão
+        initial_count = len(data_column)
+        data_column = data_column.dropna()
+        final_count = len(data_column)
+        logging.info(f"Valores iniciais na coluna: {initial_count}, após remoção de NaN: {final_count}")
+
+        # Verificar se há dados suficientes para análise
+        if data_column.shape[0] < 2:
+            logging.error("Dados insuficientes após remoção de valores não numéricos.")
+            raise ValueError("A coluna selecionada não contém dados numéricos suficientes para análise.")
 
         # Cálculos de análise
         mean_value = data_column.mean()
@@ -23,16 +44,29 @@ def analyze_data(file_path):
         ideal_value = mean_value * 1.618  # Proporção Áurea (Fibonacci)
         pareto_80_20 = data_column.quantile(0.8)
         std_dev = data_column.std()
-        slope, intercept, r_value, p_value, std_err = linregress(range(len(data_column)), data_column)
+
+        logging.info(f"Média: {mean_value}, Máximo: {max_value}, Mínimo: {min_value}")
+        logging.info(f"Valor Ideal (Proporção Áurea): {ideal_value}")
+        logging.info(f"Pareto 80/20: {pareto_80_20}, Desvio Padrão: {std_dev}")
+
+        # Regressão linear
+        x_values = range(len(data_column))
+        slope, intercept, r_value, p_value, std_err = linregress(x_values, data_column)
         future_projection = slope * (len(data_column) + 1) + intercept
+
+        logging.info(f"Slope: {slope}, Intercept: {intercept}")
+        logging.info(f"Projeção Futura: {future_projection}")
 
         # Simulação de Monte Carlo
         simulated_projections = monte_carlo_simulation(slope, intercept, std_dev, len(data_column))
+        logging.info("Simulação de Monte Carlo concluída")
 
         # Recomendações baseadas nos resultados
         recommendations = generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection)
+        logging.info("Geração de recomendações concluída")
 
         results = {
+            "Coluna Analisada": data_column_name,
             "Média": mean_value,
             "Maior Valor": max_value,
             "Menor Valor": min_value,
@@ -43,8 +77,10 @@ def analyze_data(file_path):
             "Simulação de Monte Carlo": simulated_projections,
             "Recomendações": recommendations
         }
+        logging.info("Análise de dados concluída com sucesso")
         return results
+
     except Exception as e:
-        logging.error(f"Erro ao analisar dados: {e}")
-        print("Erro ao analisar dados. Verifique o log para mais detalhes.")
+        logging.error(f"Erro ao analisar dados: {e}", exc_info=True)
+        print(f"Erro ao analisar dados: {e}")
         return None

@@ -7,12 +7,51 @@ from visualization.reports import download_results
 from analysis.recommendations import explain_results
 from utils.helpers import draw_button, load_logo
 import logging
+import threading
+import tkinter as tk
+from tkinter import simpledialog
 
-# Configuração de logging
-logging.basicConfig(filename='error_log.txt', level=logging.ERROR,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# Configuração de logging para console e arquivo
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("error_log.txt"),
+                        logging.StreamHandler()
+                    ])
+
+# Variáveis globais
+results = None
+df = None
+processing = False
+
+def run_analysis(df, data_column_name):
+    global results
+    global processing
+    processing = True
+
+    def analyze():
+        global results
+        global processing  # Added to ensure global variable is updated
+        try:
+            logging.info("Iniciando análise dos dados...")
+            results = analyze_data(df, data_column_name)
+            logging.info("Análise dos dados concluída com sucesso.")
+        except Exception as e:
+            logging.error(f"Erro ao analisar dados: {e}")
+            results = None  # Garantir que results seja None em caso de erro
+        finally:
+            processing = False  # Certificar-se de que processing é definido como False
+            pygame.event.post(pygame.event.Event(pygame.USEREVENT))  # Postar um evento customizado para atualizar a interface
+
+
+    analysis_thread = threading.Thread(target=analyze)
+    analysis_thread.start()
 
 def run_app():
+    global results
+    global df
+    global processing
+
     # Inicialização do pygame
     pygame.init()
 
@@ -23,15 +62,17 @@ def run_app():
     pygame.display.set_caption("Análise de Dados - DecisionMaker")
 
     # Cores
-    white = (255, 255, 255)
-    black = (0, 0, 0)
+    white = (248, 248, 242)
+    black = (40, 44, 52)
     green = (0, 255, 0)
+    dark_green = (0, 200, 0)  # Cor para o hover (um verde mais escuro)
+    text_color = black
 
     # Fonte
-    font = pygame.font.Font(None, 36)
+    font = pygame.font.Font(None, 32)
 
     # Dimensões e posição do botão
-    button_width = 350  # Aumentar a largura do botão de 250 para 350
+    button_width = 350  # Largura do botão
     button_height = 50
     center_x = (screen_width - button_width) // 2
 
@@ -65,8 +106,6 @@ def run_app():
     ]
 
     running = True
-    file_path = None
-    results = None
 
     while running:
         screen.fill(black)
@@ -75,35 +114,66 @@ def run_app():
         if logo_image and logo_rect:
             screen.blit(logo_image, logo_rect)
 
-        # Renderizar botões com função personalizada
+        # Renderizar botões
         draw_button(screen, "Importar Arquivo", center_x, button_y_positions[0],
-                    button_width, button_height, green, black, font)  # Texto preto
-        if results:
+                button_width, button_height, green, dark_green, text_color, font)
+
+        if results and not processing:
+            # Mostrar botões adicionais apenas se não estiver processando
             draw_button(screen, "Visualizar Resultado", center_x, button_y_positions[1],
-                        button_width, button_height, green, black, font)  # Texto preto
+                        button_width, button_height, green, dark_green, text_color, font)
             draw_button(screen, "Baixar Resultado", center_x, button_y_positions[2],
-                        button_width, button_height, green, black, font)  # Texto preto
+                        button_width, button_height, green, dark_green, text_color, font)
             draw_button(screen, "Como Avaliar os Resultados", center_x, button_y_positions[3],
-                        button_width, button_height, green, black, font)  # Texto preto
+                        button_width, button_height, green, dark_green, text_color, font)
 
         pygame.display.flip()
 
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
+
             elif event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                # Verificar se os botões foram clicados
                 if center_x <= mouse_x <= center_x + button_width:
                     if button_y_positions[0] <= mouse_y <= button_y_positions[0] + button_height:
-                        file_path = import_file()
-                        if file_path:
-                            results = analyze_data(file_path)
-                    elif results and button_y_positions[1] <= mouse_y <= button_y_positions[1] + button_height:
-                        visualize_results(results)
-                    elif results and button_y_positions[2] <= mouse_y <= button_y_positions[2] + button_height:
-                        download_results(results, file_path)
-                    elif results and button_y_positions[3] <= mouse_y <= button_y_positions[3] + button_height:
-                        explain_results()
+                        if not processing:
+                            df = import_file()
+                            if df is not None:
+                                # Obter colunas numéricas e solicitar ao usuário que selecione uma
+                                numeric_columns = df.select_dtypes(include='number').columns.tolist()
+                                if not numeric_columns:
+                                    tk.messagebox.showerror("Erro", "O DataFrame não contém colunas numéricas para análise.")
+                                    continue
+
+                                root = tk.Tk()
+                                root.withdraw()
+                                column_name = simpledialog.askstring(
+                                    "Seleção de Coluna",
+                                    f"Digite o nome de uma das colunas numéricas para análise:\n{', '.join(numeric_columns)}"
+                                )
+                                root.destroy()
+
+                                if column_name not in numeric_columns:
+                                    tk.messagebox.showerror("Erro", "Coluna inválida ou não numérica selecionada.")
+                                    continue
+
+                                # Iniciar a análise
+                                run_analysis(df, column_name)
+                    elif results and not processing:
+                        # Verificar se não está processando antes de responder aos cliques nos botões
+                        if button_y_positions[1] <= mouse_y <= button_y_positions[1] + button_height:
+                            visualize_results(results)
+                        elif button_y_positions[2] <= mouse_y <= button_y_positions[2] + button_height:
+                            download_results(results)
+                        elif button_y_positions[3] <= mouse_y <= button_y_positions[3] + button_height:
+                            explain_results(screen)
+
+            elif event.type == pygame.USEREVENT:
+                # Evento customizado para garantir que a interface atualize após a conclusão do processamento
+                logging.info("Atualizando interface após processamento.")
 
     pygame.quit()
+
+if __name__ == "__main__":
+    run_app()
