@@ -1,7 +1,7 @@
 import pygame
 import logging
 
-def generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection):
+def generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection, skewness=0):
     try:
         recommendations = []
 
@@ -23,6 +23,10 @@ def generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, fut
             recommendations.append("Alta variabilidade nos dados. Considere padronizar os processos.")
         else:
             recommendations.append("Variabilidade aceitável nos dados.")
+
+        # Recomendações com base na análise de assimetria
+        if abs(skewness) > 1:
+            recommendations.append("Os dados apresentam alta assimetria. Considere transformar os dados ou ajustar sua análise para acomodar esse fator.")
 
         return recommendations
 

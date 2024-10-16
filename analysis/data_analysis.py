@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy.stats import linregress
+from scipy.stats import skew
 from .monte_carlo import monte_carlo_simulation
 from .recommendations import generate_recommendations
 import logging
@@ -49,12 +50,23 @@ def analyze_data(df, data_column_name=None):
         logging.info(f"Valor Ideal (Proporção Áurea): {ideal_value}")
         logging.info(f"Pareto 80/20: {pareto_80_20}, Desvio Padrão: {std_dev}")
 
+        # Análise de distribuição dos dados
+        skewness = skew(data_column)
+        logging.info(f"Assimetria dos dados (skewness): {skewness}")
+        if abs(skewness) > 1:
+            logging.warning("Os dados são altamente assimétricos, considere uma transformação antes de prosseguir com a análise.")
+
         # Regressão linear
         x_values = range(len(data_column))
         slope, intercept, r_value, p_value, std_err = linregress(x_values, data_column)
         future_projection = slope * (len(data_column) + 1) + intercept
 
-        logging.info(f"Slope: {slope}, Intercept: {intercept}")
+        logging.info(f"Slope: {slope}, Intercept: {intercept}, R-squared: {r_value ** 2}, P-value: {p_value}, Std Err: {std_err}")
+
+        # Validar o coeficiente de determinação (R-squared)
+        if r_value ** 2 < 0.5:
+            logging.warning("O ajuste linear tem um r-squared baixo, a projeção futura pode não ser precisa.")
+
         logging.info(f"Projeção Futura: {future_projection}")
 
         # Simulação de Monte Carlo
@@ -65,6 +77,7 @@ def analyze_data(df, data_column_name=None):
         recommendations = generate_recommendations(mean_value, ideal_value, pareto_80_20, std_dev, future_projection)
         logging.info("Geração de recomendações concluída")
 
+        # Resultados
         results = {
             "Coluna Analisada": data_column_name,
             "Média": mean_value,
