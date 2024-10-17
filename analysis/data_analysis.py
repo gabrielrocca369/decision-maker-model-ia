@@ -3,7 +3,8 @@ from scipy.stats import linregress
 from scipy.stats import skew
 from .monte_carlo import monte_carlo_simulation
 from .recommendations import generate_recommendations
-from visualization.plots import plot_histogram  # Corrigir o caminho de importação
+# Removida a importação de plot_histogram, pois agora usamos plot_boxplot em plots.py
+# from visualization.plots import plot_histogram  # Não é mais necessário
 import logging
 
 def analyze_data(df, data_column_name=None, plot_histogram_flag=False):
@@ -38,6 +39,9 @@ def analyze_data(df, data_column_name=None, plot_histogram_flag=False):
         if data_column.shape[0] < 2:
             logging.error("Dados insuficientes após remoção de valores não numéricos.")
             raise ValueError("A coluna selecionada não contém dados numéricos suficientes para análise.")
+
+        # Obter as datas correspondentes aos dados
+        dates = data_column.index
 
         # Cálculos de análise
         mean_value = data_column.mean()
@@ -89,10 +93,14 @@ def analyze_data(df, data_column_name=None, plot_histogram_flag=False):
         simulated_projections = monte_carlo_simulation(slope, intercept, std_dev, len(data_column))
         logging.info("Simulação de Monte Carlo concluída")
 
-        # Geração de histograma se o plot_histogram_flag for True
+        # Geração de Box Plot se o plot_histogram_flag for True
         if plot_histogram_flag:
-            logging.info(f"Gerando histograma para a coluna {data_column_name}.")
-            plot_histogram(data_column, column_name=data_column_name)
+            logging.info(f"Gerando Box Plot para a coluna {data_column_name}.")
+            # Aqui você pode chamar plot_boxplot se desejar plotar diretamente na análise
+            # No entanto, conforme as recomendações anteriores, é melhor evitar isso para separar responsabilidades
+            # Portanto, deixaremos essa linha comentada
+            # plot_boxplot(data_column, dates, column_name=data_column_name)
+            pass  # Placeholder para evitar execução
 
         # Recomendações baseadas nos resultados
         recommendations = generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_20, std_dev, future_projection)

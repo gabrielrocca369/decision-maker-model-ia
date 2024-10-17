@@ -3,61 +3,82 @@ import tkinter as tk
 from tkinter import messagebox
 import logging
 import numpy as np
+import seaborn as sns  # Adicionando seaborn para o box plot
+import os
+
+# Caminho para a fonte Open Sans
+FONT_PATH = os.path.join(
+    'C:/Users/GabrielRocca/source/repos/games/decision-maker/assets/fonts/Open_Sans/static',
+    'OpenSans-Regular.ttf'
+)
+
+# Definir uma fonte padrão usando Open Sans
+if os.path.exists(FONT_PATH):
+    plt.rcParams['font.family'] = 'Open Sans'
+    plt.rcParams['pdf.fonttype'] = 42  # Para garantir compatibilidade ao salvar em PDF
+else:
+    logging.warning("Fonte Open Sans não encontrada. Usando fonte padrão DejaVu Sans.")
+    plt.rcParams['font.family'] = 'DejaVu Sans'
+
 
 def visualize_results(results):
     """
-    Função para visualizar os resultados da análise de dados. Gera dois gráficos:
-    1. Gráfico de barras para as principais métricas (excluindo simulações e recomendações).
-    2. Histograma das projeções geradas pela simulação de Monte Carlo.
-
-    Parâmetros:
-    - results: Dicionário contendo os resultados da análise de dados.
+    Função para visualizar os resultados da análise de dados.
+    Plota um gráfico de barras e um box plot das projeções da Simulação de Monte Carlo.
     """
     try:
-        # Filtrar as chaves que contêm métricas numéricas
+        # Filtrar resultados para plotagem (excluindo chaves específicas)
         plot_results = {k: v for k, v in results.items() if k not in ["Recomendações", "Simulação de Monte Carlo", "Coluna Analisada"]}
         simulated_projections = results.get("Simulação de Monte Carlo", [])
 
-        # Verificar se plot_results contém apenas valores numéricos
+        # Verificar se os valores são numéricos
         for key, value in plot_results.items():
             if not isinstance(value, (int, float, np.integer, np.floating)):
                 raise ValueError(f"O valor de '{key}' não é numérico.")
 
-        # Inicializar o Tkinter
+        # Informar o usuário que os gráficos serão exibidos
         root = tk.Tk()
         root.withdraw()
         messagebox.showinfo("Visualização", "Os resultados serão exibidos em um gráfico.")
-        root.destroy()  # Destruir a janela raiz do Tkinter
+        root.destroy()
 
-        plt.figure(figsize=(10, 12))  # Configurar o tamanho da figura para dois gráficos
+        plt.figure(figsize=(10, 12))
 
-        # Primeiro subplot: Gráfico de Barras para as Métricas
+        # Primeiro subplot: Gráfico de Barras
         plt.subplot(2, 1, 1)
         metrics = list(plot_results.keys())
         values = list(plot_results.values())
-        bars = plt.bar(metrics, values, color='skyblue')
+
+        # Gerar uma lista de cores dinamicamente
+        colors = plt.cm.viridis(np.linspace(0, 1, len(metrics)))
+
+        bars = plt.bar(metrics, values, color=colors)
         plt.xlabel('Métricas')
         plt.ylabel('Valores')
         plt.title('Resultados da Análise de Dados')
         plt.grid(axis='y', linestyle='--', alpha=0.7)
 
-        # Rotacionar labels do eixo X se houver muitas métricas
         if len(metrics) > 5:
             plt.xticks(rotation=45, ha='right')
 
-        # Adicionar rótulos de dados em cada barra
         for bar in bars:
             yval = bar.get_height()
             plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05,
                      f"{yval:.2f}", ha='center', va='bottom')
 
-        # Segundo subplot: Histograma da Simulação de Monte Carlo
+        # Segundo subplot: Box Plot da Simulação de Monte Carlo
+        plt.subplot(2, 1, 2)
         if isinstance(simulated_projections, np.ndarray) and simulated_projections.size > 0:
-            plt.subplot(2, 1, 2)
-            plt.hist(simulated_projections, bins=30, color='lightgreen', edgecolor='black')
-            plt.xlabel('Valores Projetados')
-            plt.ylabel('Frequência')
-            plt.title('Simulação de Monte Carlo - Distribuição das Projeções Futuras')
+            # Achatar o array se for multidimensional
+            if simulated_projections.ndim > 1:
+                simulated_projections_flat = simulated_projections.flatten()
+            else:
+                simulated_projections_flat = simulated_projections
+
+            sns.boxplot(y=simulated_projections_flat, color='lightblue')
+            plt.xlabel('Simulações')
+            plt.ylabel('Valores Projetados')
+            plt.title('Simulação de Monte Carlo - Box Plot das Projeções Futuras')
             plt.grid(axis='y', linestyle='--', alpha=0.7)
         else:
             logging.warning("Simulação de Monte Carlo não encontrada nos resultados.")
@@ -73,37 +94,48 @@ def visualize_results(results):
         messagebox.showerror("Erro", f"Ocorreu um erro ao visualizar os resultados:\n{e}")
         root.destroy()
 
-def plot_histogram(data, column_name, bins=30, screen=None):
+
+def plot_boxplot(data, dates, column_name, screen=None):
     """
-    Gera um histograma com base nos dados fornecidos.
+    Gera um Box Plot com base nos dados fornecidos, mostrando os quartis.
 
     Parâmetros:
-    - data: A coluna de dados numéricos.
-    - column_name: Nome da coluna a ser exibido no gráfico.
-    - bins: Número de intervalos no histograma.
+    - data: A coluna de dados numéricos (valores).
+    - dates: As datas associadas a cada linha de dados (coluna A).
+    - column_name: Nome da coluna de valores a ser exibido no gráfico.
     - screen: Objeto opcional para garantir execução na main thread (usado com Tkinter ou Pygame).
     """
     try:
-        if len(data) == 0:
-            raise ValueError("Os dados estão vazios. Não é possível gerar o histograma.")
+        if len(data) == 0 or len(dates) == 0:
+            raise ValueError("Os dados ou as datas estão vazios. Não é possível gerar o Box Plot.")
+
+        if len(data) != len(dates):
+            raise ValueError("O número de datas não corresponde ao número de valores.")
 
         # Verificar se estamos na main thread (por exemplo, com Tkinter)
         if screen is not None:
-            # Use screen para garantir que o histograma seja exibido na thread correta
-            screen.after(0, lambda: plot_histogram(data, column_name, bins))
+            # Use screen para garantir que o Box Plot seja exibido na thread correta
+            screen.after(0, lambda: plot_boxplot(data, dates, column_name, screen))
             return
 
-        # Geração do histograma
-        plt.figure(figsize=(8, 6))
-        plt.hist(data, bins=bins, color='blue', edgecolor='black', alpha=0.7)
-        plt.title(f'Histograma da Coluna: {column_name}')
-        plt.xlabel('Valores')
-        plt.ylabel('Frequência')
+        # Preparar os dados para o Box Plot
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(y=data, color='lightblue')
+        plt.xlabel('Simulações')
+        plt.ylabel('Valores Projetados')
+        plt.title(f'Box Plot para: {column_name}')
         plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
         plt.show()
 
-        logging.info(f"Histograma gerado com sucesso para a coluna: {column_name}")
+        logging.info(f"Box Plot gerado com sucesso para a coluna: {column_name}")
 
     except Exception as e:
-        logging.error(f"Erro ao gerar o histograma: {e}")
-        print(f"Erro ao gerar o histograma: {e}")
+        logging.error(f"Erro ao gerar o Box Plot: {e}")
+        print(f"Erro ao gerar o Box Plot: {e}")
+        if screen:
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showerror("Erro", f"Ocorreu um erro ao gerar o Box Plot:\n{e}")
+            root.destroy()

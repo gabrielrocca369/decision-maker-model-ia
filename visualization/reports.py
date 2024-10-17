@@ -6,12 +6,24 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import logging
 import numpy as np
+import seaborn as sns  # Adicionando seaborn para o box plot
+
+# Definir caminho para a fonte Open Sans
+FONT_PATH = os.path.join('C:/Users/GabrielRocca/source/repos/games/decision-maker/assets/fonts/Open_Sans/static', 'OpenSans-Regular.ttf')
+
+# Definir uma fonte padrão
+if os.path.exists(FONT_PATH):
+    plt.rcParams['font.family'] = 'Open Sans'
+    plt.rcParams['pdf.fonttype'] = 42  # Para garantir que a fonte seja incorporada corretamente
+else:
+    logging.warning("Fonte Open Sans não encontrada. Usando fonte padrão DejaVu Sans.")
+    plt.rcParams['font.family'] = 'DejaVu Sans'
 
 def download_results(results):
     try:
         # Remover as chaves que não são valores numéricos simples
         plot_results = {k: v for k, v in results.items() if k not in ["Recomendações", "Simulação de Monte Carlo", "Coluna Analisada"]}
-        simulated_projections = results["Simulação de Monte Carlo"]
+        simulated_projections = results.get("Simulação de Monte Carlo", [])
 
         # Verificar se plot_results contém apenas valores numéricos
         for key, value in plot_results.items():
@@ -24,7 +36,11 @@ def download_results(results):
         plt.subplot(2, 1, 1)
         metrics = list(plot_results.keys())
         values = list(plot_results.values())
-        bars = plt.bar(metrics, values, color='skyblue')
+
+        # Gerar uma lista de cores dinamicamente para o número de métricas
+        colors = plt.cm.viridis(np.linspace(0, 1, len(metrics)))
+
+        bars = plt.bar(metrics, values, color=colors)
         plt.xlabel('Métricas')
         plt.ylabel('Valores')
         plt.title('Resultados da Análise de Dados')
@@ -40,14 +56,24 @@ def download_results(results):
             plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05,
                      f"{yval:.2f}", ha='center', va='bottom')
 
-        # Segundo subplot: Histograma da Simulação de Monte Carlo
+        # Segundo subplot: Box Plot da Simulação de Monte Carlo
         plt.subplot(2, 1, 2)
-        plt.hist(simulated_projections, bins=30, color='lightgreen', edgecolor='black')
-        plt.xlabel('Valores Projetados')
-        plt.ylabel('Frequência')
-        plt.title('Simulação de Monte Carlo - Distribuição das Projeções Futuras')
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        if isinstance(simulated_projections, np.ndarray) and simulated_projections.size > 0:
+            # Achatar o array se for multidimensional
+            if simulated_projections.ndim > 1:
+                simulated_projections_flat = simulated_projections.flatten()
+            else:
+                simulated_projections_flat = simulated_projections
 
+            sns.boxplot(data=simulated_projections_flat, color='lightblue')
+            plt.xlabel('Simulações')
+            plt.ylabel('Valores Projetados')
+            plt.title('Simulação de Monte Carlo - Box Plot das Projeções Futuras')
+            plt.grid(axis='y', linestyle='--', alpha=0.7)
+        else:
+            logging.warning("Simulação de Monte Carlo não encontrada ou está vazia.")
+
+        # Salvar o gráfico como imagem temporária
         plt.tight_layout()
         temp_dir = tempfile.gettempdir()
         chart_path = os.path.join(temp_dir, 'chart.png')
@@ -65,26 +91,29 @@ def download_results(results):
         pdf.cell(0, 10, txt=f"Coluna Analisada: {results['Coluna Analisada']}", ln=True)
         pdf.ln(5)
 
-        # Adicionar as novas métricas no relatório
+        # Adicionar as métricas no relatório
         for key, value in plot_results.items():
             pdf.cell(0, 10, txt=f"{key}: {value:.2f}", ln=True)
         pdf.ln(10)
 
         # Adicionar resumo da Simulação de Monte Carlo
-        pdf.set_font("Arial", 'B', size=14)
-        pdf.cell(0, 10, txt="Resumo da Simulação de Monte Carlo:", ln=True)
-        pdf.set_font("Arial", size=12)
-        monte_carlo_mean = np.mean(simulated_projections)
-        monte_carlo_std = np.std(simulated_projections)
-        pdf.cell(0, 10, txt=f"Média da Simulação: {monte_carlo_mean:.2f}", ln=True)
-        pdf.cell(0, 10, txt=f"Desvio Padrão da Simulação: {monte_carlo_std:.2f}", ln=True)
-        pdf.ln(10)
+        if isinstance(simulated_projections, np.ndarray) and simulated_projections.size > 0:
+            pdf.set_font("Arial", 'B', size=14)
+            pdf.cell(0, 10, txt="Resumo da Simulação de Monte Carlo:", ln=True)
+            pdf.set_font("Arial", size=12)
+            monte_carlo_mean = np.mean(simulated_projections_flat)
+            monte_carlo_std = np.std(simulated_projections_flat)
+            pdf.cell(0, 10, txt=f"Média da Simulação: {monte_carlo_mean:.2f}", ln=True)
+            pdf.cell(0, 10, txt=f"Desvio Padrão da Simulação: {monte_carlo_std:.2f}", ln=True)
+            pdf.ln(10)
+        else:
+            pdf.cell(0, 10, txt="Simulação de Monte Carlo não disponível.", ln=True)
 
         # Adicionar recomendações
         pdf.set_font("Arial", 'B', size=16)
         pdf.cell(0, 10, txt="Recomendações:", ln=True)
         pdf.set_font("Arial", size=12)
-        for rec in results["Recomendações"]:
+        for rec in results.get("Recomendações", []):
             pdf.multi_cell(0, 10, txt=f"- {rec}")
         pdf.ln(10)
 

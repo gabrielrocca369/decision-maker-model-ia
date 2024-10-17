@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 
-def monte_carlo_simulation(slope, intercept, std_dev, data_length, skewness=0, n_simulations=1000):
+def monte_carlo_simulation(slope, intercept, std_dev, data_length, skewness=0, n_simulations=1000, projection_steps=1):
     """
     Realiza uma simulação de Monte Carlo para projetar valores futuros com base em
     uma regressão linear e um desvio padrão para aleatoriedade.
@@ -13,6 +13,7 @@ def monte_carlo_simulation(slope, intercept, std_dev, data_length, skewness=0, n
     - data_length: Comprimento dos dados usados na regressão.
     - skewness: Assimetria (skewness) dos dados. Utilizado para ajustar a distribuição normal se for assimétrica.
     - n_simulations: Número de simulações de Monte Carlo.
+    - projection_steps: Número de períodos no futuro que se deseja projetar.
 
     Retorno:
     - Uma lista com as projeções simuladas.
@@ -30,19 +31,32 @@ def monte_carlo_simulation(slope, intercept, std_dev, data_length, skewness=0, n
         if n_simulations <= 0 or not isinstance(n_simulations, int):
             raise ValueError("O número de simulações deve ser um inteiro positivo.")
 
-        logging.info(f"Executando simulação de Monte Carlo com {n_simulations} simulações")
+        # Verificar se projection_steps é um número válido
+        if projection_steps <= 0 or not isinstance(projection_steps, int):
+            raise ValueError("O número de períodos de projeção deve ser um inteiro positivo.")
 
-        # Se os dados forem assimétricos, usamos uma distribuição log-normal ajustada
-        if abs(skewness) > 1:
-            logging.warning(f"Assimetria alta detectada (skewness = {skewness}). Usando distribuição log-normal para simulações.")
-            # Ajustamos a simulação para valores não negativos com desvio padrão adequado
-            simulated_projections = slope * (data_length + 1) + intercept + np.random.lognormal(mean=0, sigma=np.log(1 + std_dev), size=n_simulations)
-        else:
-            # Se não houver assimetria significativa, usamos a distribuição normal
-            simulated_projections = slope * (data_length + 1) + intercept + np.random.normal(loc=0, scale=std_dev, size=n_simulations)
+        logging.info(f"Executando simulação de Monte Carlo com {n_simulations} simulações e {projection_steps} períodos projetados")
+
+        # Inicializar a matriz de projeções
+        projections = []
+
+        for step in range(1, projection_steps + 1):
+            # Se os dados forem assimétricos, usamos uma distribuição log-normal ajustada
+            if abs(skewness) > 1:
+                logging.warning(f"Assimetria alta detectada (skewness = {skewness}). Usando distribuição log-normal para simulações no período {step}.")
+                # Ajustamos a simulação para valores não negativos com desvio padrão adequado
+                simulated_step = slope * (data_length + step) + intercept + np.random.lognormal(mean=0, sigma=np.log(1 + std_dev), size=n_simulations)
+            else:
+                # Se não houver assimetria significativa, usamos a distribuição normal
+                simulated_step = slope * (data_length + step) + intercept + np.random.normal(loc=0, scale=std_dev, size=n_simulations)
+            
+            projections.append(simulated_step)
+
+        # Convertendo a lista de projeções para um array 2D (projeções x simulações)
+        projections_array = np.array(projections)
 
         logging.info("Simulação de Monte Carlo concluída com sucesso")
-        return simulated_projections
+        return projections_array
 
     except Exception as e:
         logging.error(f"Erro na simulação de Monte Carlo: {e}", exc_info=True)

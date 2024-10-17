@@ -1,6 +1,9 @@
 import pygame
 import logging
+import os
 
+# Caminho para a fonte Open Sans
+FONT_PATH = os.path.join('C:/Users/GabrielRocca/source/repos/games/decision-maker/assets/fonts/Open_Sans/static', 'OpenSans-Regular.ttf')
 
 def generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_20, std_dev, future_projection, cagr=None, skewness=0, coef_var=None):
     try:
@@ -88,8 +91,14 @@ def explain_results(screen):
         )
 
         # Definir fonte e cores
-        font_regular = pygame.font.Font(None, 24)  # Fonte regular
-        font_bold = pygame.font.Font(None, 24)  # Fonte para negrito (simulando negrito)
+        try:
+            font_regular = pygame.font.Font(FONT_PATH, 24)  # Fonte regular Open Sans
+            font_bold = pygame.font.Font(FONT_PATH, 24)  # Fonte para negrito Open Sans (simulando negrito)
+        except FileNotFoundError:
+            logging.error("Fonte Open Sans não encontrada. Certifique-se de que o caminho está correto.")
+            font_regular = pygame.font.Font(None, 24)
+            font_bold = pygame.font.Font(None, 24)
+
         font_bold.set_bold(True)  # Aplicando o negrito
         background_color = (0, 0, 0)  # Preto
         text_color = (248, 248, 242)  # Cor do texto regular

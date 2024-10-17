@@ -2,15 +2,16 @@ import pygame
 from pygame.locals import QUIT, MOUSEBUTTONDOWN
 from analysis.data_import import import_file
 from analysis.data_analysis import analyze_data
-from visualization.plots import visualize_results
-from visualization.plots import plot_histogram
+from visualization.plots import visualize_results, plot_boxplot  # Atualizado para plot_boxplot
 from visualization.reports import download_results
 from analysis.recommendations import explain_results
 from utils.helpers import draw_button, load_logo
 import logging
 import threading
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import simpledialog, messagebox
+import os
+import pandas as pd
 
 # Configuração de logging para console e arquivo
 logging.basicConfig(level=logging.DEBUG,
@@ -24,9 +25,18 @@ logging.basicConfig(level=logging.DEBUG,
 results = None
 df = None
 processing = False
-column_name = None  # Adicionar variável global para rastrear a coluna selecionada
+column_name = None  # Variável global para rastrear a coluna selecionada
 
-def run_analysis(df, data_column_name, plot_histogram_flag=False):
+# Caminho para a fonte Open Sans
+FONT_PATH = os.path.join(
+    'C:/Users/GabrielRocca/source/repos/games/decision-maker/assets/fonts/Open_Sans/static',
+    'OpenSans-Regular.ttf'
+)
+
+def run_analysis(df, data_column_name, plot_boxplot_flag=False):
+    """
+    Função para executar a análise de dados em uma thread separada.
+    """
     global results
     global processing
     processing = True
@@ -36,11 +46,16 @@ def run_analysis(df, data_column_name, plot_histogram_flag=False):
         global processing
         try:
             logging.info("Iniciando análise dos dados...")
-            results = analyze_data(df, data_column_name, plot_histogram_flag=plot_histogram_flag)
-            
-            if plot_histogram_flag:
-                # Chamar a função diretamente sem passar o 'screen'
-                plot_histogram(results['Simulação de Monte Carlo'], "Simulação de Monte Carlo")
+            results = analyze_data(df, data_column_name, plot_histogram_flag=plot_boxplot_flag)
+
+            if plot_boxplot_flag:
+                # Obter data_column e dates para o box plot
+                data_column = df[data_column_name]
+                data_column = pd.to_numeric(data_column, errors='coerce').dropna()
+                dates = data_column.index
+
+                # Chamar plot_boxplot com os argumentos necessários
+                plot_boxplot(data_column, dates, column_name=data_column_name)
             logging.info("Análise dos dados concluída com sucesso.")
         except Exception as e:
             logging.error(f"Erro ao analisar dados: {e}")
@@ -53,6 +68,9 @@ def run_analysis(df, data_column_name, plot_histogram_flag=False):
     analysis_thread.start()
 
 def run_app():
+    """
+    Função principal para executar a interface gráfica com pygame.
+    """
     global results
     global df
     global processing
@@ -77,7 +95,11 @@ def run_app():
     text_color = black
 
     # Fonte
-    font = pygame.font.Font(None, 32)
+    try:
+        font = pygame.font.Font(FONT_PATH, 24)
+    except FileNotFoundError:
+        logging.error("Fonte Open Sans não encontrada. Certifique-se de que o caminho está correto.")
+        font = pygame.font.Font(None, 24)
 
     # Dimensões e posição do botão
     button_width = 350  # Largura do botão
@@ -91,13 +113,10 @@ def run_app():
     if logo_image and logo_rect:
         # Ajustar a posição do logo
         logo_rect.top = 50  # Posição vertical do logotipo
-
-        # Obter a altura do logotipo
         logo_height = logo_rect.height
     else:
         logo_height = 0
-        # Definir logo_rect como um Rect vazio para evitar erros
-        logo_rect = pygame.Rect(0, 0, 0, 0)
+        logo_rect = pygame.Rect(0, 0, 0, 0)  # Evitar erros ao desenhar a interface
 
     # Definir uma margem entre o logotipo e o primeiro botão
     margem = 20
@@ -111,7 +130,7 @@ def run_app():
         primeiro_botao_y + 70,  # Espaçamento de 70 pixels entre os botões
         primeiro_botao_y + 140,
         primeiro_botao_y + 210,
-        primeiro_botao_y + 280  # Novo botão para o histograma
+        primeiro_botao_y + 280  # Novo botão para o box plot
     ]
 
     running = True
@@ -127,8 +146,8 @@ def run_app():
         draw_button(screen, "Importar Arquivo", center_x, button_y_positions[0],
                     button_width, button_height, green, dark_green, text_color, font)
 
-        if results and not processing:
-            # Mostrar botões adicionais apenas se não estiver processando
+        if df is not None and column_name is not None and not processing:
+            # Mostrar botões adicionais apenas se não estiver processando e df e column_name estão definidos
             draw_button(screen, "Visualizar Resultado", center_x, button_y_positions[1],
                         button_width, button_height, green, dark_green, text_color, font)
             draw_button(screen, "Baixar Resultado", center_x, button_y_positions[2],
@@ -136,9 +155,9 @@ def run_app():
             draw_button(screen, "Como Avaliar os Resultados", center_x, button_y_positions[3],
                         button_width, button_height, green, dark_green, text_color, font)
 
-            # Botão para visualizar o histograma
-            draw_button(screen, "Visualizar Histograma", center_x, button_y_positions[4],
-                        button_width, button_height, blue, dark_blue, text_color, font)
+            # Botão para visualizar o box plot
+            draw_button(screen, "Visualizar Box Plot", center_x, button_y_positions[4],
+                        button_width, button_height, blue, dark_blue, white, font)
 
         pygame.display.flip()
 
@@ -156,7 +175,10 @@ def run_app():
                                 # Obter colunas numéricas e solicitar ao usuário que selecione uma
                                 numeric_columns = df.select_dtypes(include='number').columns.tolist()
                                 if not numeric_columns:
-                                    tk.messagebox.showerror("Erro", "O DataFrame não contém colunas numéricas para análise.")
+                                    root = tk.Tk()
+                                    root.withdraw()
+                                    messagebox.showerror("Erro", "O DataFrame não contém colunas numéricas para análise.")
+                                    root.destroy()
                                     continue
 
                                 root = tk.Tk()
@@ -168,21 +190,37 @@ def run_app():
                                 root.destroy()
 
                                 if column_name not in numeric_columns:
-                                    tk.messagebox.showerror("Erro", "Coluna inválida ou não numérica selecionada.")
+                                    root = tk.Tk()
+                                    root.withdraw()
+                                    messagebox.showerror("Erro", "Coluna inválida ou não numérica selecionada.")
+                                    root.destroy()
                                     continue
 
                                 # Iniciar a análise
                                 run_analysis(df, column_name)
-                    elif results and not processing:
+                    elif df is not None and column_name is not None and not processing:
                         if button_y_positions[1] <= mouse_y <= button_y_positions[1] + button_height:
-                            visualize_results(results)
+                            if results is not None:
+                                visualize_results(results)
+                            else:
+                                root = tk.Tk()
+                                root.withdraw()
+                                messagebox.showerror("Erro", "Os resultados ainda não estão disponíveis.")
+                                root.destroy()
                         elif button_y_positions[2] <= mouse_y <= button_y_positions[2] + button_height:
-                            download_results(results)
+                            if results is not None:
+                                download_results(results)
+                            else:
+                                root = tk.Tk()
+                                root.withdraw()
+                                messagebox.showerror("Erro", "Os resultados ainda não estão disponíveis.")
+                                root.destroy()
                         elif button_y_positions[3] <= mouse_y <= button_y_positions[3] + button_height:
                             explain_results(screen)
                         elif button_y_positions[4] <= mouse_y <= button_y_positions[4] + button_height:
-                            # Executar análise e visualizar o histograma
-                            run_analysis(df, column_name, plot_histogram_flag=True)
+                            # Executar análise e visualizar o box plot
+                            if not processing:
+                                run_analysis(df, column_name, plot_boxplot_flag=True)
 
             elif event.type == pygame.USEREVENT:
                 # Evento customizado para garantir que a interface atualize após a conclusão do processamento
