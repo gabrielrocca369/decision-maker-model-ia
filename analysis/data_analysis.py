@@ -77,12 +77,18 @@ def analyze_data(df, data_column_name=None, plot_histogram_flag=False):
 
         logging.info(f"Projeção Futura: {future_projection}")
 
-        # Cálculo da Taxa de Crescimento Composta (CAGR) - Série Temporal
+        # Cálculo da Taxa de Crescimento Composta (CAGR) - Série Temporal (Dados Diários)
         if len(data_column) > 1 and min_value > 0:
             initial_value = data_column.iloc[0]
             final_value = data_column.iloc[-1]
-            years = len(data_column) - 1  # Considerando a série ao longo do tempo
-            cagr = ((final_value / initial_value) ** (1 / years) - 1) * 100
+            number_of_days = len(data_column)  # Número total de dias na série temporal
+            years = number_of_days / 365  # Convertendo dias para anos
+    
+            if years > 0:
+                cagr = ((final_value / initial_value) ** (1 / years) - 1) * 100
+            else:
+                cagr = None
+                logging.warning("Número de anos é zero após conversão. CAGR não pode ser calculado.")
         else:
             cagr = None
             logging.warning("CAGR não pode ser calculado devido à falta de dados suficientes ou valores negativos/zero.")

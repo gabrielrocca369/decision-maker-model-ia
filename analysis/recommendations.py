@@ -5,7 +5,25 @@ import os
 # Caminho para a fonte Open Sans
 FONT_PATH = os.path.join('C:/Users/GabrielRocca/source/repos/games/decision-maker/assets/fonts/Open_Sans/static', 'OpenSans-Regular.ttf')
 
+
 def generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_20, std_dev, future_projection, cagr=None, skewness=0, coef_var=None):
+    """
+    Gera recomendações baseadas nas métricas fornecidas.
+
+    Parâmetros:
+    - mean_value (float): Média das visualizações.
+    - ideal_value (float): Valor ideal calculado (Proporção Áurea).
+    - tension_value (float): Valor de tensão calculado.
+    - pareto_80_20 (float): Valor baseado na análise Pareto 80/20.
+    - std_dev (float): Desvio padrão das visualizações.
+    - future_projection (float): Projeção futura das visualizações.
+    - cagr (float, opcional): Taxa de Crescimento Anual Composta.
+    - skewness (float, opcional): Assimetria dos dados.
+    - coef_var (float, opcional): Coeficiente de variação.
+
+    Retorna:
+    - recommendations (list): Lista de recomendações.
+    """
     try:
         recommendations = []
 
@@ -59,35 +77,44 @@ def generate_recommendations(mean_value, ideal_value, tension_value, pareto_80_2
 
 
 def explain_results(screen):
+    """
+    Exibe explicações detalhadas sobre as métricas utilizando pygame.
+
+    Parâmetros:
+    - screen (pygame.Surface): Superfície do pygame onde o texto será exibido.
+    """
     try:
         # Definir o texto da explicação
-        explanation = (
+        explanation = ( 
             "**Como Avaliar os Resultados:**\n\n"
             "**Média:**\n"
-            "Pode indicar o número médio de visualizações, taxa média de abertura, etc. Comparar a média entre diferentes períodos pode ajudar a entender a tendência geral de crescimento ou queda no desempenho.\n\n"
+            "Pode indicar o número médio de visualizações, taxa média de abertura, etc. Comparar a média entre diferentes períodos pode ajudar a entender a tendência geral de crescimento ou queda no desempenho. Um valor alto indica bom desempenho, enquanto um valor baixo pode sugerir necessidade de melhorias.\n\n"
+            "**Mediana:**\n"
+            "A mediana representa o valor central dos dados ordenados. Ela é útil para evitar distorções causadas por valores extremos. Se a mediana for próxima da média, os dados são relativamente simétricos; se houver grande diferença, pode indicar a presença de outliers.\n\n"
             "**Maior Valor:**\n"
-            "Pode indicar o pico de visualizações ou a maior taxa de engajamento registrada. Esse valor é útil para identificar campanhas ou conteúdos que tiveram desempenho excepcional.\n\n"
+            "Indica o pico de visualizações ou a maior taxa de engajamento registrada. Um valor alto é geralmente positivo, mostrando um momento de sucesso. Analise este valor para identificar o que levou a tal desempenho e replicar as boas práticas.\n\n"
             "**Menor Valor:**\n"
-            "Pode indicar o menor número de visualizações ou a menor taxa de abertura. Útil para entender os pontos baixos e avaliar o que pode ter causado baixo desempenho.\n\n"
-            "**Valor Ideal (Proporção Áurea):**\n"
-            "Um valor teórico obtido multiplicando a média pela Proporção Áurea (1.618). Pode servir como uma meta ideal para alcançar nos KPI's analisados. Comparar o valor atual com o valor ideal ajuda a definir metas ambiciosas, mas possíveis.\n\n"
+            "Indica o valor mais baixo observado, como o menor número de visualizações. Um valor baixo pode sinalizar períodos ou campanhas menos eficazes. Identificar os motivos ajuda a evitar repetir esses problemas.\n\n"
+            "**Valor Ideal (Fibonacci):**\n"
+            "Valor teórico obtido multiplicando a média pela Proporção Áurea (1.618). Serve como uma meta ambiciosa, mas realista, a ser alcançada. Se o valor atual estiver próximo do valor ideal, isso sugere bom desempenho em relação ao potencial teórico.\n\n"
+            "**Valor de Tensão:**\n"
+            "Representa um limite inferior crítico, abaixo do qual o desempenho é preocupante. Se a projeção futura estiver abaixo do valor de tensão, isso indica que é necessário agir rapidamente para evitar consequências negativas.\n\n"
             "**Pareto 80/20:**\n"
-            "Corresponde ao percentil 80 dos dados. Indica que 80% dos resultados estão abaixo deste valor. Útil para identificar os principais dados que geraram a maior parte do tráfego ou engajamento, permitindo priorizar ações nas áreas que geram maior impacto.\n\n"
+            "Corresponde ao percentil 80 dos dados. Indica que 80% dos resultados estão abaixo deste valor. É útil para entender onde concentrar esforços — os 20% principais tendem a gerar a maior parte dos resultados.\n\n"
             "**Desvio Padrão:**\n"
-            "Mede a dispersão dos dados em relação à média. Um desvio padrão alto indica grande variabilidade, enquanto um desvio padrão baixo indica consistência nos resultados. Use o desvio padrão para avaliar a estabilidade das métricas e identificar possíveis outliers.\n\n"
-            "**Projeção Futura:**\n"
-            "Estimativa do próximo valor com base na tendência atual dos dados. Pode ajudar a prever o desempenho futuro em termos de visualizações, engajamento, etc. Comparar a projeção futura com metas definidas auxilia na tomada de decisões estratégicas.\n\n"
+            "Mede a dispersão dos dados em relação à média. Um desvio padrão alto indica grande variabilidade, o que pode ser sinal de inconsistência nos resultados. Um desvio padrão baixo sugere resultados mais previsíveis e consistentes.\n\n"
             "**Coeficiente de Variação:**\n"
-            "Mede a variabilidade relativa dos dados. Um coeficiente de variação alto indica maior volatilidade e incerteza nos resultados. Comparar o coeficiente de variação entre diferentes campanhas pode ajudar a identificar quais delas foram mais consistentes.\n\n"
-            "**Simulação de Monte Carlo:**\n"
-            "Método estatístico que utiliza a aleatoriedade para estimar a incerteza nos resultados futuros. A simulação gera uma distribuição de possíveis projeções futuras, permitindo entender a gama de resultados possíveis e suas probabilidades. Útil para avaliar riscos e definir estratégias que sejam robustas diante da incerteza.\n\n"
+            "Mede a variabilidade relativa dos dados. Um coeficiente de variação alto indica alta volatilidade, sugerindo incerteza. Valores baixos indicam maior consistência. É útil comparar campanhas para ver qual foi mais estável.\n\n"
+            "**Projeção Futura:**\n"
+            "Estimativa do valor futuro com base nas tendências atuais. Valores altos indicam um crescimento esperado, enquanto valores baixos podem sugerir necessidade de mudanças estratégicas.\n\n"
             "**CAGR (Taxa de Crescimento Composta):**\n"
-            "Mede o crescimento médio anual composto ao longo do tempo. Útil para avaliar o desempenho em séries temporais. Comparar o CAGR entre diferentes períodos pode ajudar a identificar se o crescimento está acelerando, desacelerando ou permanecendo constante.\n\n"
-            "**Exemplos Práticos:**\n"
-            "**1. Comparação de Campanhas:** Ao analisar a taxa de engajamento de diferentes campanhas, o desvio padrão pode ser usado para determinar qual campanha teve o desempenho mais consistente, enquanto o Pareto 80/20 pode indicar quais campanhas foram responsáveis pela maior parte do engajamento.\n\n"
-            "**2. Definição de Metas:** Use a Proporção Áurea e a Projeção Futura para definir metas realistas, mas desafiadoras, que levem em conta o histórico de desempenho.\n\n"
-            "**3. Análise de Volatilidade:** O coeficiente de variação pode ser comparado entre diferentes períodos para avaliar a estabilidade dos resultados. Se uma campanha tiver alta volatilidade, pode ser necessário investigar e mitigar fatores externos que afetaram o desempenho.\n\n"
-            "**4. Previsão de Desempenho Futuro:** A Simulação de Monte Carlo pode ser utilizada para prever a probabilidade de alcançar determinadas metas de engajamento, ajudando na alocação de recursos para campanhas futuras."
+            "Mede o crescimento médio anual composto ao longo do tempo. Um CAGR alto é indicativo de crescimento constante, enquanto um valor baixo pode significar estagnação ou declínio.\n\n"
+            "**Média da Simulação de Monte Carlo:**\n"
+            "A média dos resultados da simulação de Monte Carlo representa uma previsão centralizada do desempenho futuro, levando em consideração a incerteza. Valores próximos à média indicam consistência, enquanto desvios grandes sugerem cenários variados.\n\n"
+            "**Desvio Padrão da Simulação Monte Carlo:**\n"
+            "Indica a variabilidade dos resultados simulados. Um desvio padrão alto sugere um futuro mais incerto, enquanto um valor baixo indica previsões mais consistentes.\n\n"
+            "**Recomendações:**\n"
+            "Baseadas nas métricas analisadas, como investir mais em áreas com projeção alta, ou padronizar processos em caso de alta variabilidade. Boas recomendações ajudam a maximizar resultados e minimizar riscos.\n\n"
         )
 
         # Definir fonte e cores
@@ -170,7 +197,6 @@ def explain_results(screen):
                         scroll_y = min(scroll_y + scroll_speed, explanation_surface.get_height() - screen_height)
                     elif event.key == pygame.K_UP:
                         scroll_y = max(scroll_y - scroll_speed, 0)
-
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     running = False
 
@@ -185,5 +211,5 @@ def explain_results(screen):
             pygame.display.flip()
 
     except Exception as e:
-        logging.error(f"Erro ao exibir explicação: {e}", exc_info=True)
-        print("Erro ao exibir explicação. Verifique o log para mais detalhes.")
+        logging.error(f"Erro ao exibir resultados: {e}", exc_info=True)
+        print(f"Erro ao exibir resultados: {e}")

@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import simpledialog, messagebox
 import os
 import pandas as pd
+import numpy as np  # Importação do numpy para geração de dados simulados
 
 # Configuração de logging para console e arquivo
 logging.basicConfig(level=logging.DEBUG,
@@ -46,9 +47,10 @@ def run_analysis(df, data_column_name, plot_boxplot_flag=False):
         global processing
         try:
             logging.info("Iniciando análise dos dados...")
+            # Chamada para a função analyze_data, que agora retorna um dicionário de resultados
             results = analyze_data(df, data_column_name, plot_histogram_flag=plot_boxplot_flag)
 
-            if plot_boxplot_flag:
+            if plot_boxplot_flag and results is not None:
                 # Obter data_column e dates para o box plot
                 data_column = df[data_column_name]
                 data_column = pd.to_numeric(data_column, errors='coerce').dropna()
@@ -56,7 +58,10 @@ def run_analysis(df, data_column_name, plot_boxplot_flag=False):
 
                 # Chamar plot_boxplot com os argumentos necessários
                 plot_boxplot(data_column, dates, column_name=data_column_name)
-            logging.info("Análise dos dados concluída com sucesso.")
+            if results is not None:
+                logging.info("Análise dos dados concluída com sucesso.")
+            else:
+                logging.warning("A análise de dados não retornou resultados válidos.")
         except Exception as e:
             logging.error(f"Erro ao analisar dados: {e}")
             results = None  # Garantir que results seja None em caso de erro
@@ -168,6 +173,7 @@ def run_app():
             elif event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
                 if center_x <= mouse_x <= center_x + button_width:
+                    # Botão: Importar Arquivo
                     if button_y_positions[0] <= mouse_y <= button_y_positions[0] + button_height:
                         if not processing:
                             df = import_file()
@@ -198,7 +204,9 @@ def run_app():
 
                                 # Iniciar a análise
                                 run_analysis(df, column_name)
+                    # Outros botões
                     elif df is not None and column_name is not None and not processing:
+                        # Botão: Visualizar Resultado
                         if button_y_positions[1] <= mouse_y <= button_y_positions[1] + button_height:
                             if results is not None:
                                 visualize_results(results)
@@ -207,6 +215,7 @@ def run_app():
                                 root.withdraw()
                                 messagebox.showerror("Erro", "Os resultados ainda não estão disponíveis.")
                                 root.destroy()
+                        # Botão: Baixar Resultado
                         elif button_y_positions[2] <= mouse_y <= button_y_positions[2] + button_height:
                             if results is not None:
                                 download_results(results)
@@ -215,8 +224,16 @@ def run_app():
                                 root.withdraw()
                                 messagebox.showerror("Erro", "Os resultados ainda não estão disponíveis.")
                                 root.destroy()
+                        # Botão: Como Avaliar os Resultados
                         elif button_y_positions[3] <= mouse_y <= button_y_positions[3] + button_height:
-                            explain_results(screen)
+                            if results is not None:
+                                explain_results(screen)
+                            else:
+                                root = tk.Tk()
+                                root.withdraw()
+                                messagebox.showerror("Erro", "Os resultados ainda não estão disponíveis.")
+                                root.destroy()
+                        # Botão: Visualizar Box Plot
                         elif button_y_positions[4] <= mouse_y <= button_y_positions[4] + button_height:
                             # Executar análise e visualizar o box plot
                             if not processing:
