@@ -126,6 +126,15 @@ def plot_boxplot(data, dates, column_name, screen=None):
         plt.title(f'Box Plot para: {column_name}')
         plt.grid(axis='y', linestyle='--', alpha=0.7)
 
+        # Adicionar rótulos de dados
+        quartiles = np.percentile(data, [25, 50, 75])
+        mediana = quartiles[1]
+        q1, q3 = quartiles[0], quartiles[2]
+
+        plt.text(0, mediana, f'Mediana: {mediana:.2f}', horizontalalignment='center', color='black', weight='semibold')
+        plt.text(0, q1, f'Q1: {q1:.2f}', horizontalalignment='center', color='blue')
+        plt.text(0, q3, f'Q3: {q3:.2f}', horizontalalignment='center', color='blue')
+
         plt.tight_layout()
         plt.show()
 
